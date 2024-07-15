@@ -5,7 +5,7 @@ wgu_supplement = 397
 
 # defining take home variables
 after_tax_rate = 0.92
-aaron_scheduled_shifts_this_month = 8
+aaron_scheduled_shifts_this_month = 4
 aaron_hourly = 15
 aaron_hours = 8
 aaron_month = aaron_hours * aaron_hourly * aaron_scheduled_shifts_this_month * after_tax_rate
@@ -13,6 +13,8 @@ aaron_month = aaron_hours * aaron_hourly * aaron_scheduled_shifts_this_month * a
 # aaron
 aaron_income = aaron_month
 #aaron_income = 1001
+#aaron_income = 2201
+
 # aaron logged hours implementation for outlier.ai
 
 megan_scheduled_shifts_this_month = 0
@@ -93,7 +95,7 @@ utilities = 70
 
 # classifying tiers for dynamic budgeting
 
-# Tier 1: For the 9 months I'm still in school for
+# Tier 1: For the 9 months I'm still in school 
 class Tier_1:
     def __init__(self):
         self.tier = 1
@@ -123,6 +125,8 @@ class Tier_1:
         # discretionary savings
         self.home_down = 0
         self.roth_ira = 0
+        self.megan_savings = 200
+        self.high_yield = 100
 
 # second tier
 class Tier_2:
@@ -136,15 +140,15 @@ class Tier_2:
 
         # discretionary spendings
         self.icloud = 0
-        self.dates = 50
-        self.gifts = 30
+        self.dates = 30
+        self.gifts = 0
         self.donations = 0
         self.personal = 60
-        self.gaming = 0#15
-        self.clothes_shoes_accessories = 0#50
-        self.entertainment = 45
-        self.social = 50#100
-        self.recreation = 40
+        self.gaming = 0
+        self.clothes_shoes_accessories = 0
+        self.entertainment = 30
+        self.social = 0
+        self.recreation = 0
         self.personal_care = 0
         self.classroom = 0
         self.furnishing = 0
@@ -154,6 +158,8 @@ class Tier_2:
         # discretionary savings
         self.home_down = 0
         self.roth_ira = 0
+        self.megan_savings = 200
+        self.high_yield = 100
 
 # third tier
 class Tier_3:
@@ -170,10 +176,10 @@ class Tier_3:
         self.gifts = 30
         self.donations = 0
         self.personal = 60
-        self.gaming = 0#15
-        self.clothes_shoes_accessories = 0#50
+        self.gaming = 15
+        self.clothes_shoes_accessories = 50
         self.entertainment = 45
-        self.social = 50#100
+        self.social = 100
         self.recreation = 40
         self.personal_care = 0
         self.classroom = 0
@@ -184,14 +190,16 @@ class Tier_3:
         # discretionary savings
         self.home_down = 100
         self.roth_ira = aaron_income * 0.10
+        self.megan_savings = 250
+        self.high_yield = 250
 
-if aaron_income <= 1000:  # take home salary < $12,000
+if aaron_income <= 1000:  # take home salary < $12,000 (part time jobs)
     income_tier = Tier_1()
-elif aaron_income > 1000 and aaron_income <= 2666:  # take home salary > $12,000 < $32,000
+elif aaron_income > 1000 and aaron_income <= 2200:  # take home salary > $12,000 < $26,496 (not quite full time)
     income_tier = Tier_2()
-elif aaron_income > 2666 and aaron_income <= 4333:  # take home salary > $32,000 < $52,000
+elif aaron_income > 2200 and aaron_income <= 4333:  # take home salary > $24,496 < $52,000 (at least full time at $15/hr)
     income_tier = Tier_3()
-elif aaron_income > 4333 and aaron_income <= 6000:  # take home salary > $52,000 < $72,000
+elif aaron_income > 4333 and aaron_income <= 6000:  # take home salary > $52,000 < $72,000 (big boy job)
     income_tier = Tier_3()
 elif aaron_income > 6000 and aaron_income <= 8333:  # take home salary > $72,000 < $100,000
     income_tier = Tier_3()
@@ -253,6 +261,8 @@ if isinstance(income_tier, Tier_1) or isinstance(income_tier, Tier_2) or isinsta
     # discretionary savings for long term goals assignments
     home_down = income_tier.home_down
     roth_ira = income_tier.roth_ira
+    megan_savings = income_tier.megan_savings
+    high_yield = income_tier.high_yield
 
 # discretionary savings for hardware
 hardware_savings = (
@@ -270,7 +280,7 @@ hardware_savings = (
 strict_fixed = car_payment + rent + car_insurance + internet + car_maintenance + utilities + renters_insurance
 soft_fixed = groceries + gas + restaurants
 discretionary_spendings = dates + gifts + personal + social + recreation + personal_care + clothes_shoes_accessories + donations + classroom + furnishing + other + icloud + travel
-discretionary_savings = hardware_savings + roth_ira + home_down
+discretionary_savings = hardware_savings + roth_ira + home_down + megan_savings + high_yield
 
 #total budget
 total_budget = strict_fixed + soft_fixed + discretionary_spendings + discretionary_savings
@@ -368,6 +378,7 @@ if income_tier.tier > 1:
     
 else:
     print("You are broke :P")
+    print("Personal: $", round(personal, 2))
     print("\n")
 
 #conditionally print discretionary savings
@@ -377,10 +388,14 @@ print("---------------------------------------")
 if income_tier.tier > 1:
     print("Home Down Payment: $", round(home_down, 2))
     print("Roth IRA Contributions: $", round(roth_ira, 2))
+    print(f"Megan's Savings: ${megan_savings:,.2f}")
+    print(f"High-Yield Savings: ${high_yield:,.2f}")
     print("Hardware Savings: $", round(hardware_savings, 2))
     print("\n")
 else:
     print("You are broke :P")
+    print(f"Megan's Savings: ${megan_savings:,.2f}")
+    print(f"High-Yield Savings: ${high_yield:,.2f}")
     print("\n")
 
 #function calculating categories over time
@@ -393,6 +408,8 @@ def calculate_years(years_savings, category):
 #calculatin savings
 additional_savings = calculate_years(years_savings, surplus_deficit)
 home_down_savings = calculate_years(years_savings, home_down)
+megan_savings_savings = calculate_years(years_savings, megan_savings)
+high_yield_savings = calculate_years(years_savings, high_yield)
 hardware_savings_savings = calculate_years(years_savings, hardware_savings)
 clothes_shoes_accessories_savings = calculate_years(years_savings, clothes_shoes_accessories)
 gaming_savings = calculate_years(years_savings, gaming)
@@ -417,17 +434,20 @@ if income_tier.tier > 1:
     print("---------------------------------------")
     print(f"Home Down Payment saved up after {years_savings} {years}: ${home_down_savings:,.2f}")
     print(f"Clothing, Shoes, Accessories saved up after {years_savings} {years}: {clothes_shoes_accessories_savings:,.2f}")
-    print(f"Gaming Savings saved up after {years_savings} {years}: ${gaming_savings:,.2f}")
-    print(f"Hardware Savings saved up after {years_savings} {years}: ${hardware_savings_savings:,.2f}")
-    for counter, item in enumerate(hardware_list):            
-        name = hardware_names[counter]
-        item_savings = item.rate * 12 * years_savings
-        if item.fr == 1:
-        	formatting = "person"
-        else:
-        	formatting = "people"
+    print(f"Megan's Savings saved up after {years_savings} {years}: ${megan_savings_savings:,.2f}")
+    print(f"High-Yield Savings saved up after {years_savings} {years}: ${high_yield_savings:,.2f}")
+    if income_tier.tier > 2:
+        print(f"Gaming Savings saved up after {years_savings} {years}: ${gaming_savings:,.2f}")
+        print(f"Hardware Savings saved up after {years_savings} {years}: ${hardware_savings_savings:,.2f}")
+        for counter, item in enumerate(hardware_list):            
+            name = hardware_names[counter]
+            item_savings = item.rate * 12 * years_savings
+            if item.fr == 1:
+        	    formatting = "person"
+            else:
+        	    formatting = "people"
         print(f"\tSavings for {name} saved up after {years_savings} {years}: ${item_savings:,.2f} for {item.fr} {formatting}")
-            
+                
     print(f"Total Combined Savings Accounts saved up after {years_savings} {years}: ${total_savings:,.2f}")
 else:
     print(f"Total Savings saved up after {years_savings} {years}: ${additional_savings:,.2f}")
