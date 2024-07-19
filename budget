@@ -14,6 +14,7 @@ aaron_month = aaron_hours * aaron_hourly * aaron_scheduled_shifts_this_month * a
 aaron_income = aaron_month
 #aaron_income = 1001
 #aaron_income = 2201
+aaron_income = 3067 #IT Job
 
 # aaron logged hours implementation for outlier.ai
 
@@ -446,16 +447,15 @@ if income_tier.tier > 1:
         	    formatting = "person"
             else:
         	    formatting = "people"
-        print(f"\tSavings for {name} saved up after {years_savings} {years}: ${item_savings:,.2f} for {item.fr} {formatting}")
-                
+        print(f"Savings for {name} saved up after {years_savings} {years}: ${item_savings:,.2f} for {item.fr} {formatting}")
+
+    print("---------------------------------------")            
     print(f"Total Combined Savings Accounts saved up after {years_savings} {years}: ${total_savings:,.2f}")
 else:
     print(f"Total Savings saved up after {years_savings} {years}: ${additional_savings:,.2f}")
 
 print("\n")
-
-
-
+print("Discretionary Priorities: \n1. Pay off Car\n2. Replenish Megan's Savings to $10k\n3. High Yield Emergancy Savings to $10k")
 
 
 
