@@ -1,20 +1,68 @@
-#!/bin/python3
+#!/Library/Frameworks/Python.framework/Versions/3.12/bin/python3
+
+### IMPORTS
+import argparse
+import calendar
+from datetime import datetime
+                        
+# ARG PARSER
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Process budget arguments.")
+    parser.add_argument("-i", "--income", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
+                               default=[13.0, 7.5, 8], help="Hourly rate, hours worked, and days worked for income calculation")
+    parser.add_argument("-o", "--overview", action="store_true", help="Print the full overview")
+    parser.add_argument("-p", "--print-totals", action="store_true", help="Print category totals only")
+    parser.add_argument("-r", "--restaurant", type=int, default=20, help="A number to override the default restaurant trip value")
+    parser.add_argument("-g", "--groceries", type=int, default=68, help="A number to override the default grocery trip value")
+    args = parser.parse_args()
+    rtrip = args.restaurant
+    gtrip = args.groceries
+
+### DECLARES MONTH VARIABLES
+month_number = datetime.now().month
+month_title = calendar.month_name[month_number]
+
+def count_mondays_and_fridays():
+    # Get the current year and month
+    now = datetime.now()
+    year = now.year
+    month = now.month
+
+    # Get the total number of days in the current month
+    _, num_days = calendar.monthrange(year, month)
+
+    # Initialize counters for Mondays and Fridays
+    monday_count = 0
+    friday_count = 0
+
+    # Loop through each day of the month
+    for day in range(1, num_days + 1):
+        weekday = calendar.weekday(year, month, day)
+        if weekday == calendar.MONDAY:
+            monday_count += 1
+        elif weekday == calendar.FRIDAY:
+            friday_count += 1
+
+    return monday_count, friday_count
+
+# Call the function and print the results
+mondays, fridays = count_mondays_and_fridays()
 
 # incomes
 wgu_supplement = 397
 
 # defining take home variables
 after_tax_rate = 0.92
-aaron_scheduled_shifts_this_month = 4
-aaron_hourly = 15
-aaron_hours = 8
-aaron_month = aaron_hours * aaron_hourly * aaron_scheduled_shifts_this_month * after_tax_rate
+aaron_hourly, aaron_hours, aaron_days = args.income
+aaron_month = aaron_hourly * aaron_hours * aaron_days * after_tax_rate # Example tax rate applied
+
+# income with Outlier
+# aaron_scheduled_shifts_this_month = 8
+# aaron_hourly = 18
+# aaron_hours = 8
 
 # aaron
 aaron_income = aaron_month
-#aaron_income = 1001
-#aaron_income = 2201
-aaron_income = 3067 #IT Job
 
 # aaron logged hours implementation for outlier.ai
 
@@ -35,19 +83,15 @@ salary = total_income * 12
 # income tier set to 0 before program logic determines correct tier
 income_tier = 0
 
-# defines number of weeks this month for adjusting eating out and grocery expense
-number_of_mondays_this_month = 5
-number_of_fridays_this_month = 4
-
 #used for calculating savings at the end
 years_savings = .75
 
 
 # defining rent rate
 #1710 - 1542 = $168 fluff charges
-#base_rent = 1542 #before September 28th
-base_rent = 1597 #after September 28th
-fluff_rent = 168
+base_rent = 1542 #before September 28th
+#base_rent = 1597 #after September 28th
+fluff_rent = 168 + 3
 
 """
 Fluff charges consist of:
@@ -62,6 +106,23 @@ Common Area Electric ~ $6.38
 Service Fee ~ $7.30
 """
 
+### DEFINE DEFAULT BUDGET BOUNDRIES
+class Spending:
+    def __init__(self, grocery_trip, restaurant_trip):
+        self.grocery_trip = grocery_trip
+        self.restaurant_trip = restaurant_trip
+spending_tier = None
+
+if aaron_income <= 1000:
+    spending_tier = Spending(68, 20)
+elif 1000 < aaron_income <= 2200:
+    spending_tier = Spending(68, 20)
+elif 2200 < aaron_income <= 4333:
+    spending_tier = Spending(80, 25)
+elif 4333 < aaron_income <= 6000:
+    spending_tier = Spending(80, 25)
+elif aaron_income > 6000:
+    spending_tier = Spending(80, 25)
 
 
 
@@ -79,7 +140,20 @@ Service Fee ~ $7.30
 
 
 
-
+# ANSI escape codes for colors
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    SPENT = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'  # Reset to default color
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    UNDERLINEOFF = '\033[24m'
+    SnD_code = ''
+    
 #improve dialogue for years
 years = "years"
 if years_savings <= 1:
@@ -90,7 +164,7 @@ rent = base_rent + fluff_rent
 car_payment = 275.84
 car_insurance = 98.32  # Hyundai $54.33 Liability ONLY, Honda CRV $43.99 Full Coverage
 renters_insurance = 15.5  # bill $93 every 6 months
-internet = 30
+internet = 40
 car_maintenance = 150
 utilities = 70
 
@@ -102,98 +176,154 @@ class Tier_1:
         self.tier = 1
 
         # strict variable
-        self.groceries = 68 * number_of_mondays_this_month
-        self.gas = 180
-        self.restaurants = 25 * number_of_fridays_this_month
+        self.strict_variable = {
+            'groceries': gtrip * mondays,
+            'g_trip': gtrip,
+            'gas': 180,
+            'restaurants': rtrip * fridays,
+            'r_trip': rtrip
+        }
 
         # discretionary spendings
-        self.icloud = 0
-        self.dates = 0
-        self.gifts = 0
-        self.donations = 0
-        self.personal = 60
-        self.gaming = 0
-        self.clothes_shoes_accessories = 0
-        self.entertainment = 0
-        self.social = 0
-        self.recreation = 0
-        self.personal_care = 0
-        self.classroom = 0
-        self.furnishing = 0
-        self.other = 0
-        self.travel = 0
+        self.discretionary_spendings = {
+            'icloud': 0,
+            'dates': 0,
+            'gifts': 0,
+            'donations': 0,
+            'personal': 0,
+            'gaming': 0,
+            'clothes_shoes_accessories': 0,
+            'entertainment': 0,
+            'social': 0,
+            'recreation': 0,
+            'personal_care': 0,
+            'classroom': 0,
+            'furnishing': 0,
+            'other': 0,
+            'travel': 0
+        }
 
         # discretionary savings
-        self.home_down = 0
-        self.roth_ira = 0
-        self.megan_savings = 200
-        self.high_yield = 100
+        self.discretionary_savings = {
+            'home_down': 0,
+            'roth_ira': 0,
+            'megan_savings': 0,
+            'high_yield': 0
+        }
 
+    def print_section(self, section_name):
+        section = getattr(self, section_name, None)
+        if section is None:
+            print(f"Section '{section_name}' does not exist.")
+            return
+
+        for attribute, value in section.items():
+            if isinstance(value, (int, float)) and value > 0:
+                print(f"\t> {attribute}: {Colors.SPENT}${value:,.2f}{Colors.ENDC}")
 # second tier
 class Tier_2:
     def __init__(self):
         self.tier = 2
 
         # strict variable
-        self.groceries = 80 * number_of_mondays_this_month
-        self.gas = 200
-        self.restaurants = 25 * number_of_fridays_this_month
-
+        self.strict_variable = {
+            'groceries': gtrip * mondays, #was $80
+            'g_trip': gtrip,
+            'gas': 180,
+            'restaurants': rtrip * fridays,  #was 25
+            'r_trip': rtrip
+        }
+        
         # discretionary spendings
-        self.icloud = 0
-        self.dates = 30
-        self.gifts = 0
-        self.donations = 0
-        self.personal = 60
-        self.gaming = 0
-        self.clothes_shoes_accessories = 0
-        self.entertainment = 30
-        self.social = 0
-        self.recreation = 0
-        self.personal_care = 0
-        self.classroom = 0
-        self.furnishing = 0
-        self.other = 0
-        self.travel = 15
+        self.discretionary_spendings = {
+            'icloud': 0,
+            'dates': 30,
+            'gifts': 0,
+            'donations': 0,
+            'personal': 60,
+            'gaming': 0,
+            'clothes_shoes_accessories': 0,
+            'entertainment': 30,
+            'social': 0,
+            'recreation': 0,
+            'personal_care': 0,
+            'classroom': 0,
+            'furnishing': 0,
+            'other': 0,
+            'travel': 15
+        }
 
         # discretionary savings
-        self.home_down = 0
-        self.roth_ira = 0
-        self.megan_savings = 200
-        self.high_yield = 100
+        self.discretionary_savings = {
+            'home_down': 0,
+            'roth_ira': 0,
+            'megan_savings': 200,
+            'high_yield': 100
+        }
+        
+    def print_section(self, section_name):
+        section = getattr(self, section_name, None)
+        if section is None:
+            print(f"Section '{section_name}' does not exist.")
+            return
+
+        for attribute, value in section.items():
+            if isinstance(value, (int, float)) and value > 0:
+                print(f"\t> {attribute}: {Colors.SPENT}${value:,.2f}{Colors.ENDC}")
 
 # third tier
 class Tier_3:
     def __init__(self):
         self.tier = 3
+       
         # strict variable
-        self.groceries = 80 * number_of_mondays_this_month
-        self.gas = 200
-        self.restaurants = 25 * number_of_fridays_this_month
+        self.strict_variable = {
+            'groceries': gtrip * mondays, #was $80
+            'g_trip': gtrip,
+            'gas': 180,
+            'restaurants': rtrip * fridays,  #was 25
+            'r_trip': rtrip
+        }
 
         # discretionary spendings
-        self.icloud = 0
-        self.dates = 50
-        self.gifts = 30
-        self.donations = 0
-        self.personal = 60
-        self.gaming = 15
-        self.clothes_shoes_accessories = 50
-        self.entertainment = 45
-        self.social = 100
-        self.recreation = 40
-        self.personal_care = 0
-        self.classroom = 0
-        self.furnishing = 0
-        self.other = 0
-        self.travel = 15
+        self.discretionary_spendings = {
+            'icloud': 0,
+            'dates': 50,
+            'gifts': 30,
+            'donations': 0,
+            'personal': 60,
+            'gaming': 15,
+            'clothes_shoes_accessories': 50,
+            'entertainment': 45,
+            'social': 100,
+            'recreation': 40,
+            'personal_care': 0,
+            'classroom': 0,
+            'furnishing': 0,
+            'other': 0,
+            'travel': 15
+        }
 
         # discretionary savings
-        self.home_down = 100
-        self.roth_ira = aaron_income * 0.10
-        self.megan_savings = 250
-        self.high_yield = 250
+        self.discretionary_savings = {
+            'home_down': 100,
+            'roth_ira': aaron_income * 0.10,
+            'megan_savings': 250,
+            'high_yield': 250
+        }
+        
+    def print_section(self, section_name):
+        section = getattr(self, section_name, None)
+        if section is None:
+            print(f"Section '{section_name}' does not exist.")
+            return
 
+        for attribute, value in section.items():
+            if isinstance(value, (int, float)) and value > 0:
+                print(f"\t> {attribute}: {Colors.SPENT}${value:,.2f}{Colors.ENDC}")
+
+
+### DEFINE SPENDING TIER BOUNDRIES
 if aaron_income <= 1000:  # take home salary < $12,000 (part time jobs)
     income_tier = Tier_1()
 elif aaron_income > 1000 and aaron_income <= 2200:  # take home salary > $12,000 < $26,496 (not quite full time)
@@ -238,32 +368,32 @@ hardware_names = ["earbuds", "headphones", "watch", "phone", "tablet", "laptop",
 
 if isinstance(income_tier, Tier_1) or isinstance(income_tier, Tier_2) or isinstance(income_tier, Tier_3):
     # strict variable
-    groceries = income_tier.groceries
-    gas = income_tier.gas
-    restaurants = income_tier.restaurants
+    groceries = income_tier.strict_variable['groceries']
+    gas = income_tier.strict_variable['gas']
+    restaurants = income_tier.strict_variable['restaurants']
 
     # discretionary spendings assignments
-    icloud = income_tier.icloud
-    dates = income_tier.dates
-    gifts = income_tier.gifts
-    donations = income_tier.donations
-    personal = income_tier.personal
-    gaming = income_tier.gaming
-    clothes_shoes_accessories = income_tier.clothes_shoes_accessories
-    entertainment = income_tier.entertainment
-    social = income_tier.social
-    recreation = income_tier.recreation
-    personal_care = income_tier.personal_care
-    classroom = income_tier.classroom
-    furnishing = income_tier.furnishing
-    other = income_tier.other
-    travel = income_tier.travel
-
-    # discretionary savings for long term goals assignments
-    home_down = income_tier.home_down
-    roth_ira = income_tier.roth_ira
-    megan_savings = income_tier.megan_savings
-    high_yield = income_tier.high_yield
+    icloud = income_tier.discretionary_spendings['icloud']
+    dates = income_tier.discretionary_spendings['dates']
+    gifts = income_tier.discretionary_spendings['gifts']
+    donations = income_tier.discretionary_spendings['donations']
+    personal = income_tier.discretionary_spendings['personal']
+    gaming = income_tier.discretionary_spendings['gaming']
+    clothes_shoes_accessories = income_tier.discretionary_spendings['clothes_shoes_accessories']
+    entertainment = income_tier.discretionary_spendings['entertainment']
+    social = income_tier.discretionary_spendings['social']
+    recreation = income_tier.discretionary_spendings['recreation']
+    personal_care = income_tier.discretionary_spendings['personal_care']
+    classroom = income_tier.discretionary_spendings['classroom']
+    furnishing = income_tier.discretionary_spendings['furnishing']
+    other = income_tier.discretionary_spendings['other']
+    travel = income_tier.discretionary_spendings['travel']
+    
+    # discretionary savings for long-term goals assignments
+    home_down = income_tier.discretionary_savings['home_down']
+    roth_ira = income_tier.discretionary_savings['roth_ira']
+    megan_savings = income_tier.discretionary_savings['megan_savings']
+    high_yield = income_tier.discretionary_savings['high_yield']
 
 # discretionary savings for hardware
 hardware_savings = (
@@ -297,8 +427,7 @@ pdiscretionary_savings = ( discretionary_savings / total_income ) * 100
 
 # more as percentages
 prent = (rent / total_income) * 100
-pre = (pre_discretionary_remaining / total_income) * 100
-
+pred = (pre_discretionary_remaining / total_income) * 100
 #year total budget
 year_expenses = total_budget * 12
 surplus_deficit_year = salary - year_expenses
@@ -306,160 +435,214 @@ surplus_deficit_year = salary - year_expenses
 #Income to Fixed Expenses Ratio
 aaron_income_strict_ratio = aaron_income /  strict_fixed
 
-print(aaron_income_strict_ratio)
+###############################################################################################
 
-#print out all the calculations
-print("Sources of Income: Month Overview")
-print("\n")
-print(f"WGU Supplement: ${wgu_supplement:,.2f}")
-print(f"Megan's Take Home Pay: ${megan_income:,.2f}")
-print(f"Aaron's Take Home Pay: ${aaron_income:,.2f}")
-print(f"Total Income: ${total_income:,.2f}")
-print("---------------------------------------")
 
-#overview
-print("Income Tier: ", income_tier.tier)
-print("\n")
-print(f"Monthly Spendings: ${total_budget:,.2f}")
-print(f"Pre Discretionary Dispersment Remaining: ${pre_discretionary_remaining:,.2f}")
-print(f"\t{pre:.0f} % of Total Income")
-if surplus_deficit > 0:
-    print(f"Remaining Balance: ${surplus_deficit:,.2f}")
-else:
-    print(f"Over Budget: ${surplus_deficit:,.2f}")
-print(f"\t{psurplus_deficit:.0f} % of Total Income")
-print("---------------------------------------")    
-print("\n")
 
-#strict fixed
-print(f"Strict Fixed aka Bills: ${strict_fixed:,.2f}")
-print(f"{pstrict_fixed:.0f} % of Total Income")
-print("---------------------------------------")
-print(f"Rent: ${rent:,.2f} ({prent:.0f} % of Total Income)")
-print("Car: $", round(car_payment, 2))
-print("Car Insurance: $", round(car_insurance, 2))
-print("Renters Insurance: $", round(renters_insurance, 2))
-print("Internet: $", round(internet, 2))
-print("Utilities: $", round(utilities, 2))
-print("\n")
 
-#strict variable
-print(f"Strict Variable Spendings: ${soft_fixed:,.2f}")
-print(f"{psoft_fixed:.0f} % of Total Income")
-print("---------------------------------------")
-print("Groceries: $", round(groceries, 2))
-print("Groceries Per Week: $", round((groceries / number_of_mondays_this_month), 2))
-print("Gas: $", round(gas, 2))
-print("Restaurants: $", round(restaurants, 2))
-print("Restaurants Per Week: $", round((restaurants / number_of_fridays_this_month), 2))
-print("\n")
+# here is where old print statements go:
 
-#conditionally print discretionary spendings
-print(f"Discretionary Spendings: ${discretionary_spendings}")
-print(f"{pdiscretionary_spendings:.0f} % of Total Income")
-print("---------------------------------------")
 
-if income_tier.tier > 1:
-    print("Dates: $", round(dates, 2))
-    print("Gifts: $", round(gifts, 2))
-    print("Donations: $", round(donations, 2))
-    print("Personal: $", round(personal, 2))
-    print("Gaming: $", round(gaming, 2))
-    print("Clothes, Shoes, and Accessories: $", round(clothes_shoes_accessories, 2))
-    print("Entertainment: $", round(entertainment, 2))
-    print("Social: $", round(social, 2))
-    print("Recreation: $", round(recreation))
-    print("Personal Care: $", round(personal_care, 2))
-    print("iCloud: $", round(icloud, 2))    
-    print("Travel: $", round(travel, 2))
-    print("Classroom: $", round(classroom, 2))
-    print("Furnishing: $", round(furnishing, 2))
-    print("Other: $", round(other, 2))
+
+###############################################################################################
+
+def print_overview():
+    ### PRINT HEADER
+    print("\n")
+    print(f"{Colors.HEADER}=== Overview ==={Colors.ENDC}")
     print("\n")
     
-else:
-    print("You are broke :P")
-    print("Personal: $", round(personal, 2))
+    ### PRINT INCOME
+    print(f"{Colors.UNDERLINE}{Colors.BOLD}Sources of Income: Month Overview{Colors.ENDC}")
+    print(f"WGU Supplement: {Colors.OKGREEN}${wgu_supplement:,.2f}{Colors.ENDC}")
+    print(f"Megan's Take Home Pay: {Colors.OKGREEN}${megan_income:,.2f}{Colors.ENDC}")
+    print(f"Aaron's Take Home Pay: {Colors.OKGREEN}${aaron_income:,.2f}{Colors.ENDC}")
+    print(f"{Colors.OKGREEN}{Colors.UNDERLINE}{Colors.BOLD}Total Income:{Colors.UNDERLINEOFF} ${total_income:,.2f}{Colors.ENDC}")
+    print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
+    print(f"** Income Tier: {income_tier.tier} **")
     print("\n")
+    
+    ### PRINT PLANNED BALANCE
+    buffer = "  "
+    over = ""
+    print(f"\t{Colors.OKGREEN}${total_income:,.2f}{Colors.ENDC}")
+    print(f"-\t{Colors.SPENT}${total_budget:,.2f}{Colors.ENDC}")
+    if surplus_deficit >= 0:
+        SnD_code = Colors.OKGREEN
+        if surplus_deficit >= 1000:
+            buffer = ""
+            over = "_"
+    else:
+        buffer = " "
+        SnD_code = Colors.FAIL
+        if surplus_deficit <= -1000:
+            buffer = ""
+            over = "_"
 
-#conditionally print discretionary savings
-print(f"Discretionary Savings: ${discretionary_savings:,.2f}")
-print(f"{pdiscretionary_savings:.0f} % of Total Income")
-print("---------------------------------------")
-if income_tier.tier > 1:
-    print("Home Down Payment: $", round(home_down, 2))
-    print("Roth IRA Contributions: $", round(roth_ira, 2))
-    print(f"Megan's Savings: ${megan_savings:,.2f}")
-    print(f"High-Yield Savings: ${high_yield:,.2f}")
-    print("Hardware Savings: $", round(hardware_savings, 2))
+    print(f"_________________{over}")
+    print(f"=\t{buffer}{SnD_code}${surplus_deficit:,.2f}{Colors.ENDC}")
     print("\n")
-else:
-    print("You are broke :P")
-    print(f"Megan's Savings: ${megan_savings:,.2f}")
-    print(f"High-Yield Savings: ${high_yield:,.2f}")
-    print("\n")
-
-#function calculating categories over time
-def calculate_years(years_savings, category):
-    value = 0
-    for _ in range(int(years_savings * 12)):
-        value += category
-    return value
-
-#calculatin savings
-additional_savings = calculate_years(years_savings, surplus_deficit)
-home_down_savings = calculate_years(years_savings, home_down)
-megan_savings_savings = calculate_years(years_savings, megan_savings)
-high_yield_savings = calculate_years(years_savings, high_yield)
-hardware_savings_savings = calculate_years(years_savings, hardware_savings)
-clothes_shoes_accessories_savings = calculate_years(years_savings, clothes_shoes_accessories)
-gaming_savings = calculate_years(years_savings, gaming)
-
-#total savings
-total_savings = additional_savings + home_down_savings + hardware_savings_savings + clothes_shoes_accessories_savings + gaming_savings
-
-#yearly overview
-print("Yearly Overview:")
-print(f"Combined Incomes total Salary: ${salary:,.2f}")
-print(f"A Year of Expenses: ${year_expenses:,.2f}")
-if surplus_deficit_year > 0:
-    print(f"A Year in Surplus: ${surplus_deficit_year:,.2f}")
-else:
-    print(f"A Year in Deficit: ${surplus_deficit_year:,.2f}")
-print("---------------------------------------")
-print("\n")
-
-#conditionally print savings
-if income_tier.tier > 1:
-    print(f"Additional Savings saved up after {years_savings} {years}: ${additional_savings:,.2f}")
+    
+    
+        ### PRINT REMAINING BALANCE
+    pre = ""
+    if discretionary_spendings > 0 and surplus_deficit > 0:
+        pre = "\t\t      "
+        print(f"{Colors.UNDERLINE}{Colors.BOLD}Pre Discretionary Dispersment Remaining:{Colors.ENDC} ${pre_discretionary_remaining:,.2f}{Colors.ENDC}")
+        print(f"{pred:.0f}% of Total Income")
+    if surplus_deficit > 0:
+        print(f"{Colors.UNDERLINE}{Colors.BOLD}Remaining Balance:{Colors.UNDERLINEOFF}{Colors.OKGREEN} ${surplus_deficit:,.2f}{Colors.ENDC}")
+        print(f"{psurplus_deficit:.0f}% of Total Income")
+        print("\n")
+    else:
+        print(f"{Colors.UNDERLINE}{Colors.BOLD}Over Budget:{Colors.FAIL}{Colors.UNDERLINEOFF} ${surplus_deficit:,.2f}{Colors.ENDC}")
+        print(f"\t>> {psurplus_deficit:.0f}% of Total Income")
+        print("\n")
+    
+    ### PRINT STRICT FIXED
+    print(f"{Colors.UNDERLINE}Strict Fixed aka Bills:{Colors.SPENT}{Colors.BOLD} ${strict_fixed:,.2f}{Colors.ENDC}")
+    print(f"{pstrict_fixed:.0f} % of Total Income")
     print("---------------------------------------")
-    print(f"Home Down Payment saved up after {years_savings} {years}: ${home_down_savings:,.2f}")
-    print(f"Clothing, Shoes, Accessories saved up after {years_savings} {years}: {clothes_shoes_accessories_savings:,.2f}")
-    print(f"Megan's Savings saved up after {years_savings} {years}: ${megan_savings_savings:,.2f}")
-    print(f"High-Yield Savings saved up after {years_savings} {years}: ${high_yield_savings:,.2f}")
-    if income_tier.tier > 2:
-        print(f"Gaming Savings saved up after {years_savings} {years}: ${gaming_savings:,.2f}")
-        print(f"Hardware Savings saved up after {years_savings} {years}: ${hardware_savings_savings:,.2f}")
-        for counter, item in enumerate(hardware_list):            
-            name = hardware_names[counter]
-            item_savings = item.rate * 12 * years_savings
-            if item.fr == 1:
-        	    formatting = "person"
-            else:
-        	    formatting = "people"
-        print(f"Savings for {name} saved up after {years_savings} {years}: ${item_savings:,.2f} for {item.fr} {formatting}")
+    print(f"Rent: {Colors.SPENT}${rent:,.2f} ({prent:.0f} % of Total Income){Colors.ENDC}")
+    print(f"Car: {Colors.SPENT}${car_payment:,.2f}{Colors.ENDC}")
+    print(f"Car Insurance: {Colors.SPENT}${car_insurance:,.2f}{Colors.ENDC}")
+    print(f"Renters Insurance: {Colors.SPENT}${renters_insurance:,.2f}{Colors.ENDC}")
+    print(f"Internet: {Colors.SPENT}${internet:,.2f}{Colors.ENDC}")
+    print(f"Utilities: {Colors.SPENT}${utilities:,.2f}{Colors.ENDC}")
+    print("\n")
+    
+    ### PRINT STRICT VARIABLE
+    print(f"{Colors.UNDERLINE}Strict Variable Spendings:{Colors.SPENT}{Colors.BOLD} ${soft_fixed:,.2f}{Colors.ENDC}")
+    print(f"{psoft_fixed:.0f} % of Total Income")
+    print("---------------------------------------")
+    print(f"Groceries: {Colors.SPENT}${groceries:,.2f}{Colors.ENDC}")
+    print(f"Groceries Per Week: {Colors.SPENT}${(groceries / mondays):,.2f}{Colors.ENDC}")
+    print(f"Gas: {Colors.SPENT}${gas:,.2f}{Colors.ENDC}")
+    print(f"Restaurants: {Colors.SPENT}${restaurants:,.2f}{Colors.ENDC}")
+    print(f"Restaurants Per Week: {Colors.SPENT}${(restaurants / fridays):,.2f}{Colors.ENDC}")
+    print("\n")
+    
+    ### PRINT DISCRETIONARY SPENDINGS
+    print(f"{Colors.UNDERLINE}Discretionary Spendings: {Colors.SPENT}{Colors.BOLD}${discretionary_spendings:,.2f}{Colors.ENDC}")
+    print(f"{pdiscretionary_spendings:.0f} % of Total Income{Colors.ENDC}")
+    print("---------------------------------------")
+    if income_tier.tier > 1:
+        print(f"Dates: {Colors.SPENT}${dates:,.2f}{Colors.ENDC}")
+        print(f"Gifts: {Colors.SPENT}${gifts:,.2f}{Colors.ENDC}")
+        print(f"Donations: {Colors.SPENT}${donations:,.2f}{Colors.ENDC}")
+        print(f"Personal: {Colors.SPENT}${personal:,.2f}{Colors.ENDC}")
+        print(f"Gaming: {Colors.SPENT}${gaming:,.2f}{Colors.ENDC}")
+        print(f"Clothes, Shoes, and Accessories: {Colors.SPENT}${clothes_shoes_accessories:,.2f}{Colors.ENDC}")
+        print(f"Entertainment: {Colors.SPENT}${entertainment:,.2f}{Colors.ENDC}")
+        print(f"Social: {Colors.SPENT}${social:,.2f}{Colors.ENDC}")
+        print(f"Recreation: {Colors.SPENT}${recreation:,.2f}{Colors.ENDC}")
+        print(f"Personal Care: {Colors.SPENT}${personal_care:,.2f}{Colors.ENDC}")
+        print(f"iCloud: {Colors.SPENT}${icloud:,.2f}{Colors.ENDC}")
+        print(f"Travel: {Colors.SPENT}${travel:,.2f}{Colors.ENDC}")
+        print(f"Classroom: {Colors.SPENT}${classroom:,.2f}{Colors.ENDC}")
+        print(f"Furnishing: {Colors.SPENT}${furnishing:,.2f}{Colors.ENDC}")
+        print(f"Other: {Colors.SPENT}${other:,.2f}{Colors.ENDC}")
+        print("\n")
+    else:
+        print("You are broke :P")
+        print(f"Personal: {Colors.SPENT}${personal:,.2f}{Colors.ENDC}")
+        print("\n")
+    
+    ### PRINT DISCRETIONARY SAVINGS
+    print(f"{Colors.UNDERLINE}Discretionary Savings: {Colors.SPENT}{Colors.BOLD}${discretionary_savings:,.2f}{Colors.ENDC}")
+    print(f"{pdiscretionary_savings:.0f} % of Total Income{Colors.ENDC}")
+    print("---------------------------------------")
+    if income_tier.tier > 1:
+        print(f"Home Down Payment: {Colors.SPENT}${home_down:,.2f}{Colors.ENDC}")
+        print(f"Roth IRA Contributions: {Colors.SPENT}${roth_ira:,.2f}{Colors.ENDC}")
+        print(f"Megan's Savings: {Colors.SPENT}${megan_savings:,.2f}{Colors.ENDC}")
+        print(f"High-Yield Savings: {Colors.SPENT}${high_yield:,.2f}{Colors.ENDC}")
+        print(f"Hardware Savings: {Colors.SPENT}${hardware_savings:,.2f}{Colors.ENDC}")
+        print("\n")
+    else:
+        print("You are broke :P")
+        print(f"Megan's Savings: {Colors.SPENT}${megan_savings:,.2f}{Colors.ENDC}")
+        print("\n")
 
-    print("---------------------------------------")            
-    print(f"Total Combined Savings Accounts saved up after {years_savings} {years}: ${total_savings:,.2f}")
+# END OF OVERVIEW PRINT DEF
+#########################################################################
+
+# PRINT CATEGORY TOTALS DEF
+
+def print_category_totals():
+    ### PRRINT HEADER
+    print("\n")
+    print(f"{Colors.HEADER}=== Cashflow ==={Colors.ENDC}")
+    print("\n")
+    
+    ### PRINT INCOME
+    print(f"{Colors.UNDERLINE}{Colors.BOLD}{month_title}:{Colors.ENDC}")
+    print(f"WGU Supplement: {Colors.OKGREEN}${wgu_supplement:,.2f}{Colors.ENDC}")
+    print(f"Megan's Take Home Pay: {Colors.OKGREEN}${megan_income:,.2f}{Colors.ENDC}")
+    print(f"Aaron's Take Home Pay: {Colors.OKGREEN}${aaron_income:,.2f}{Colors.ENDC}")
+    print(f"{Colors.OKGREEN}{Colors.UNDERLINE}{Colors.BOLD}Total Income:{Colors.UNDERLINEOFF} ${total_income:,.2f}{Colors.ENDC}")
+    print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
+    print(f"** Income Tier: {income_tier.tier} **")
+    print("\n")
+    
+    ### PRINT PLANNED BALANCE
+    buffer = "  "
+    over = ""
+    print(f"\t{Colors.OKGREEN}${total_income:,.2f}{Colors.ENDC}")
+    print(f"-\t{Colors.SPENT}${total_budget:,.2f}{Colors.ENDC}")
+    if surplus_deficit >= 0:
+        SnD_code = Colors.OKGREEN
+        if surplus_deficit >= 1000:
+            buffer = ""
+            over = "_"
+    else:
+        buffer = " "
+        SnD_code = Colors.FAIL
+        if surplus_deficit <= -1000:
+            buffer = ""
+            over = "_"
+
+    print(f"_________________{over}")
+    print(f"=\t{buffer}{SnD_code}${surplus_deficit:,.2f}{Colors.ENDC}")
+    print("\n")
+    
+    ### PRINT REMAINING BALANCE
+    pre = ""
+    if discretionary_spendings > 0 and surplus_deficit > 0:
+        pre = "\t\t      "
+        print(f"{Colors.UNDERLINE}{Colors.BOLD}Pre Discretionary Dispersment Remaining:{Colors.ENDC} ${pre_discretionary_remaining:,.2f}{Colors.ENDC}")
+        #print(f"\t>> {pred:.0f}% of Total Income")
+    if surplus_deficit > 0:
+        print(f"{pre}{Colors.UNDERLINE}{Colors.BOLD}Remaining Balance:{Colors.UNDERLINEOFF}{Colors.OKGREEN} ${surplus_deficit:,.2f}{Colors.ENDC}")
+        print("\n")
+    else:
+        print(f"{Colors.UNDERLINE}{Colors.BOLD}Over Budget:{Colors.FAIL}{Colors.UNDERLINEOFF} ${surplus_deficit:,.2f}{Colors.ENDC}")
+        #print(f"\t>> {psurplus_deficit:.0f}% of Total Income")
+        print("\n")
+    
+    ### PRINT CATEGORY TOTALS
+    print(f"{Colors.HEADER}=== Category Totals ==={Colors.ENDC}")
+    print("\n")
+    print(f"{Colors.UNDERLINE}Strict Fixed aka Bills:{Colors.SPENT}{Colors.BOLD} ${strict_fixed:,.2f}{Colors.ENDC}")
+    print(f"{Colors.UNDERLINE}Strict Variable Spendings:{Colors.SPENT}{Colors.BOLD} ${soft_fixed:,.2f}{Colors.ENDC}")
+    # Print only the 'strict_variable' section
+    income_tier.print_section('strict_variable')
+    print(f"{Colors.UNDERLINE}Discretionary Spendings: {Colors.SPENT}{Colors.BOLD}${discretionary_spendings:,.2f}{Colors.ENDC}")
+    # Print only the 'discretionary_spendings' section
+    income_tier.print_section('discretionary_spendings')
+    print(f"{Colors.UNDERLINE}Discretionary Savings: {Colors.SPENT}{Colors.BOLD}${discretionary_savings:,.2f}{Colors.ENDC}")
+    # Print only the 'discretionary_savings' section
+    income_tier.print_section('discretionary_savings')
+    print("\n")
+    
+# END OF CATEGORY TOTALS PRINT DEF
+#########################################################################
+
+### PRINT BASED ON ARG PROVIDED
+
+if args.overview:
+    print_overview()
+elif args.print_totals:
+    print_category_totals()
 else:
-    print(f"Total Savings saved up after {years_savings} {years}: ${additional_savings:,.2f}")
-
-print("\n")
-print("Discretionary Priorities: \n1. Pay off Car\n2. Replenish Megan's Savings to $10k\n3. High Yield Emergancy Savings to $10k")
-
-
-
-
-
-
-
+    print_category_totals()  # Default behavior if no arguments are provided
