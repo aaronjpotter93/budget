@@ -97,7 +97,8 @@ jobs.append((s_grocery, grocery_outlet))
 # DJ
 s_dj = "DJ"
 gig = 600
-num_events = 1
+# num_events = 1
+num_events = 0
 dj = gig * num_events
 jobs.append((s_dj, dj))
 
@@ -141,7 +142,20 @@ years_savings = .75
 #1710 - 1542 = $168 fluff charges
 base_rent = 1542 #before September 28th
 #base_rent = 1597 #after September 28th
-fluff_rent = 168 + 3
+
+# Define the cutoff date (September 28, 2024)
+cutoff_date = datetime(2024, 9, 28)
+# Get the current date and time
+current_date = datetime.now()
+
+# Check if the current date is before or after September 28th
+if current_date < cutoff_date:
+    base_rent = 1542 #before September 28th
+else:
+    base_rent = 1597 #after September 28th
+
+
+fluff_rent = 168
 
 """
 Fluff charges consist of:
