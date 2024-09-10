@@ -18,6 +18,20 @@ if __name__ == "__main__":
     rtrip = args.restaurant
     gtrip = args.groceries
 
+    # ANSI escape codes for colors
+class Colors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    SPENT = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'  # Reset to default color
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    UNDERLINEOFF = '\033[24m'
+    SnD_code = ''
+
 ### DECLARES MONTH VARIABLES
 month_number = datetime.now().month
 month_title = calendar.month_name[month_number]
@@ -51,17 +65,53 @@ mondays, fridays = count_mondays_and_fridays()
 # incomes
 wgu_supplement = 397
 
-# defining take home variables
+### AARON JOBS ###
+jobs = []
+
+# Define deduction variables
 after_tax_rate = 0.92
+after_gas_rate = 0.77
+
+# Outlier
+s_outlier = "Outlier"
+outlier_shifts = 0
+outlier_hourly = 18
+outlier_hours = 8
+outlier = outlier_shifts * outlier_hourly * outlier_hours * after_tax_rate
+jobs.append((s_outlier, outlier))
+
+# Amazon Flex
+s_flex = "Flex"
+flex_shifts = 10
+flex_hourly = 15.75
+flex_hours = 4
+flex = flex_shifts * flex_hourly * flex_hours * after_gas_rate
+jobs.append((s_flex, flex))
+
+# Grocery Outlet
+s_grocery = "Grocery Outlet"
 aaron_hourly, aaron_hours, aaron_days = args.income
-aaron_month = aaron_hourly * aaron_hours * aaron_days * after_tax_rate # Example tax rate applied
+grocery_outlet = aaron_hourly * aaron_hours * aaron_days * after_tax_rate
+jobs.append((s_grocery, grocery_outlet))
 
-# income with Outlier
-# aaron_scheduled_shifts_this_month = 8
-# aaron_hourly = 18
-# aaron_hours = 8
+# DJ
+s_dj = "DJ"
+gig = 600
+num_events = 1
+dj = gig * num_events
+jobs.append((s_dj, dj))
 
-# aaron
+# print jobs that have an income this month planned
+if len(jobs) > 1:
+    print(f"\n{Colors.HEADER}== Jobs Scheduled for this month =={Colors.ENDC}")
+else:
+    print(f"{Colors.HEADER}== Job scheduled for this month =={Colors.ENDC}")
+for x, y in jobs:
+    if y > 0:
+        print(f"\t> {x}\n\t  {Colors.OKGREEN}${y:,.2f}{Colors.ENDC}")
+
+# aaron jobs total
+aaron_month = grocery_outlet + flex + outlier + dj
 aaron_income = aaron_month
 
 # aaron logged hours implementation for outlier.ai
@@ -140,19 +190,10 @@ elif aaron_income > 6000:
 
 
 
-# ANSI escape codes for colors
-class Colors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    SPENT = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'  # Reset to default color
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-    UNDERLINEOFF = '\033[24m'
-    SnD_code = ''
+
+
+
+
     
 #improve dialogue for years
 years = "years"
@@ -324,7 +365,7 @@ class Tier_3:
 
 
 ### DEFINE SPENDING TIER BOUNDRIES
-if aaron_income <= 1000:  # take home salary < $12,000 (part time jobs)
+if aaron_income <= 2000:  # take home salary < $12,000 (part time jobs)
     income_tier = Tier_1()
 elif aaron_income > 1000 and aaron_income <= 2200:  # take home salary > $12,000 < $26,496 (not quite full time)
     income_tier = Tier_2()
