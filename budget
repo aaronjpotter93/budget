@@ -11,7 +11,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--income", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
                                default=[13.0, 7.5, 8], help="Hourly rate, hours worked, and days worked for income calculation")
     parser.add_argument("-o", "--overview", action="store_true", help="Print the full overview")
-    parser.add_argument("-c", "--cashflow", action="store_true", help="Print cashflow")
+    parser.add_argument("-j", "--jobs", action="store_true", help="Job Breakdown")
     parser.add_argument("-r", "--restaurant", type=int, default=20, help="A number to override the default restaurant trip value")
     parser.add_argument("-g", "--groceries", type=int, default=68, help="A number to override the default grocery trip value")
     parser.add_argument("-f", "--flex", nargs='?', const=True, type=float, help="Most recent gas spendature on Amazon Flex Block")
@@ -749,7 +749,7 @@ def print_cashflow():
 if args.overview:
     print_jobs_scheduled()
     print_overview()
-elif args.cashflow:
+elif args.jobs:
     print_jobs_scheduled()
     print_cashflow()
 elif args.flex:
