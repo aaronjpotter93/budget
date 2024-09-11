@@ -9,7 +9,11 @@ from datetime import datetime
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process budget arguments.")
     parser.add_argument("-i", "--income", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
-                               default=[13.0, 7.5, 8], help="Hourly rate, hours worked, and days worked for income calculation")
+                                default=[13.0, 7, 5], help="Hourly rate, hours worked, and days worked for income calculation")
+    
+    parser.add_argument("-ai", "--outlier", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
+                               default=[18.0, 3, 0], help="Hourly rate, hours worked, and days worked for income calculation")
+    #                          default=[18.0, 3, 16]
     parser.add_argument("-o", "--overview", action="store_true", help="Print the full overview")
     parser.add_argument("-j", "--jobs", action="store_true", help="Job Breakdown")
     parser.add_argument("-r", "--restaurant", type=int, default=20, help="A number to override the default restaurant trip value")
@@ -75,11 +79,23 @@ after_gas_rate = 0.77
 
 # Outlier
 s_outlier = "Outlier"
-outlier_shifts = 0
-outlier_hourly = 18
-outlier_hours = 8
-outlier = outlier_shifts * outlier_hourly * outlier_hours * after_tax_rate
+outlier_hourly, outlier_hours, outlier_days = args.outlier
+outlier = outlier_hourly * outlier_hours * outlier_days * after_tax_rate
 jobs.append((s_outlier, outlier))
+
+# Grocery Outlet
+s_grocery = "Grocery Outlet"
+aaron_hourly, aaron_hours, aaron_days = args.income
+grocery_outlet = aaron_hourly * aaron_hours * aaron_days * after_tax_rate
+jobs.append((s_grocery, grocery_outlet))
+
+# DJ
+s_dj = "DJ"
+gig = 600
+# num_events = 1
+num_events = 0
+dj = gig * num_events
+jobs.append((s_dj, dj))
 
 class Flex:
     def __init__ (self, offer: float, miles: float, gallons: float, ppg: float):
@@ -100,11 +116,7 @@ class Flex:
 lunes = Flex(63, 85, 3.96, 3.599)
 martes = Flex(72, 77, 2.79, 3.629)
 miercoles = Flex(63, 35.6, 1.02, 3.6)
-
-# lunes.print_summary()
-# martes.print_summary()
-# miercoles.print_summary()
-
+flex_blocks = []
 flex_blocks = [lunes, martes, miercoles]
 tl_flex_miles = 0
 tl_flex_gas = 0
@@ -123,20 +135,6 @@ s_flex = "Flex"
 # flex = flex_shifts * flex_hourly * flex_hours * after_gas_rate
 jobs.append((s_flex, tl_flex_profit))
 # jobs.append((s_flex, flex))
-
-# Grocery Outlet
-s_grocery = "Grocery Outlet"
-aaron_hourly, aaron_hours, aaron_days = args.income
-grocery_outlet = aaron_hourly * aaron_hours * aaron_days * after_tax_rate
-jobs.append((s_grocery, grocery_outlet))
-
-# DJ
-s_dj = "DJ"
-gig = 600
-# num_events = 1
-num_events = 0
-dj = gig * num_events
-jobs.append((s_dj, dj))
 
 # aaron jobs total
 aaron_month = grocery_outlet + tl_flex_profit + outlier + dj
@@ -517,6 +515,10 @@ surplus_deficit_year = salary - year_expenses
 #Income to Fixed Expenses Ratio
 aaron_income_strict_ratio = aaron_income /  strict_fixed
 
+#Target Income based on a ratio of income/expenses
+ratio = 1.11009373
+target = total_budget * ratio
+
 ###############################################################################################
 
 
@@ -540,6 +542,10 @@ def print_overview():
     print(f"Megan's Take Home Pay: {Colors.OKGREEN}${megan_income:,.2f}{Colors.ENDC}")
     print(f"Aaron's Take Home Pay: {Colors.OKGREEN}${aaron_income:,.2f}{Colors.ENDC}")
     print(f"{Colors.OKGREEN}{Colors.UNDERLINE}{Colors.BOLD}Total Income:{Colors.UNDERLINEOFF} ${total_income:,.2f}{Colors.ENDC}")
+    if (total_income / total_budget) < ratio:
+        gap = target - total_income
+        print(f"\t> {Colors.FAIL}Target Income: {Colors.OKCYAN}${target:,.2f}{Colors.ENDC}")
+        print(f"\t> {Colors.FAIL}Make at least: {Colors.OKCYAN}${gap:,.2f}{Colors.ENDC}{Colors.FAIL} more to be on target.{Colors.ENDC}")
     print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
     print(f"** Income Tier: {income_tier.tier} **")
     print("\n")
@@ -687,6 +693,10 @@ def print_cashflow():
     print(f"Megan's Take Home Pay: {Colors.OKGREEN}${megan_income:,.2f}{Colors.ENDC}")
     print(f"Aaron's Take Home Pay: {Colors.OKGREEN}${aaron_income:,.2f}{Colors.ENDC}")
     print(f"{Colors.OKGREEN}{Colors.UNDERLINE}{Colors.BOLD}Total Income:{Colors.UNDERLINEOFF} ${total_income:,.2f}{Colors.ENDC}")
+    if (total_income / total_budget) < ratio:
+        gap = target - total_income
+        print(f"\t> {Colors.FAIL}Target Income: {Colors.OKCYAN}${target:,.2f}{Colors.ENDC}")
+        print(f"\t> {Colors.FAIL}Make at least: {Colors.OKCYAN}${gap:,.2f}{Colors.ENDC}{Colors.FAIL} more to be on target.{Colors.ENDC}")
     print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
     print(f"** Income Tier: {income_tier.tier} **")
     print("\n")
