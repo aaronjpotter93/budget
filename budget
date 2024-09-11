@@ -11,9 +11,10 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--income", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
                                default=[13.0, 7.5, 8], help="Hourly rate, hours worked, and days worked for income calculation")
     parser.add_argument("-o", "--overview", action="store_true", help="Print the full overview")
-    parser.add_argument("-p", "--print-totals", action="store_true", help="Print category totals only")
+    parser.add_argument("-c", "--cashflow", action="store_true", help="Print cashflow")
     parser.add_argument("-r", "--restaurant", type=int, default=20, help="A number to override the default restaurant trip value")
     parser.add_argument("-g", "--groceries", type=int, default=68, help="A number to override the default grocery trip value")
+    parser.add_argument("-f", "--flex", nargs='?', const=True, type=float, help="Most recent gas spendature on Amazon Flex Block")
     args = parser.parse_args()
     rtrip = args.restaurant
     gtrip = args.groceries
@@ -80,13 +81,48 @@ outlier_hours = 8
 outlier = outlier_shifts * outlier_hourly * outlier_hours * after_tax_rate
 jobs.append((s_outlier, outlier))
 
+class Flex:
+    def __init__ (self, offer: float, miles: float, gallons: float, ppg: float):
+        self.offer = offer
+        self.miles = miles
+        self.gallons = gallons
+        self.ppg = ppg
+
+        self.m_g = miles/gallons
+        self.gas: float = ppg * gallons
+        self.profit = offer - self.gas
+        self.p_take = (self.profit / offer) * 100
+
+    def print_summary(self):
+        print(f"\nBlock Summary:\n> Offer: ${self.offer:.2f}\n> Miles: {self.miles:.2f}\n> Gallons: {self.gallons:.2f}\n> M/G: {self.m_g:.2f}\n> PPG: {self.ppg:.2f}\n> Gas: ${self.gas:.2f}\n> Profit: ${self.profit:.2f}\n> P_Take: %{self.p_take:.0f}\n")
+
+
+lunes = Flex(63, 85, 3.96, 3.599)
+martes = Flex(72, 77, 2.79, 3.629)
+miercoles = Flex(63, 35.6, 1.02, 3.6)
+
+# lunes.print_summary()
+# martes.print_summary()
+# miercoles.print_summary()
+
+flex_blocks = [lunes, martes, miercoles]
+tl_flex_miles = 0
+tl_flex_gas = 0
+tl_flex_profit = 0
+
+for day in flex_blocks:
+    tl_flex_miles += day.miles
+    tl_flex_gas += day.gas
+    tl_flex_profit += day.profit
+
 # Amazon Flex
 s_flex = "Flex"
-flex_shifts = 10
-flex_hourly = 15.75
-flex_hours = 4
-flex = flex_shifts * flex_hourly * flex_hours * after_gas_rate
-jobs.append((s_flex, flex))
+# flex_shifts = 10
+# flex_hourly = 15.75
+# flex_hours = 4
+# flex = flex_shifts * flex_hourly * flex_hours * after_gas_rate
+jobs.append((s_flex, tl_flex_profit))
+# jobs.append((s_flex, flex))
 
 # Grocery Outlet
 s_grocery = "Grocery Outlet"
@@ -102,17 +138,8 @@ num_events = 0
 dj = gig * num_events
 jobs.append((s_dj, dj))
 
-# print jobs that have an income this month planned
-if len(jobs) > 1:
-    print(f"\n{Colors.HEADER}== Jobs Scheduled for this month =={Colors.ENDC}")
-else:
-    print(f"{Colors.HEADER}== Job scheduled for this month =={Colors.ENDC}")
-for x, y in jobs:
-    if y > 0:
-        print(f"\t> {x}\n\t  {Colors.OKGREEN}${y:,.2f}{Colors.ENDC}")
-
 # aaron jobs total
-aaron_month = grocery_outlet + flex + outlier + dj
+aaron_month = grocery_outlet + tl_flex_profit + outlier + dj
 aaron_income = aaron_month
 
 # aaron logged hours implementation for outlier.ai
@@ -622,9 +649,33 @@ def print_overview():
 # END OF OVERVIEW PRINT DEF
 #########################################################################
 
-# PRINT CATEGORY TOTALS DEF
+# PRINT JOBS SCHEDULED
 
-def print_category_totals():
+def print_jobs_scheduled():
+        # print jobs that have an income this month planned
+    if len(jobs) > 1:
+        print(f"\n{Colors.HEADER}== Jobs Scheduled for this month =={Colors.ENDC}")
+    else:
+        print(f"{Colors.HEADER}== Job scheduled for this month =={Colors.ENDC}")
+    for x, y in jobs:
+        if y > 0:
+            print(f"\t> {x}\n\t  {Colors.OKGREEN}${y:,.2f}{Colors.ENDC}")
+            if x == "Flex" and args.flex is False:
+                print("\n\t\t>No Amazon Flex Blocks Delevired.\n")
+            elif x == "Flex" and args.flex is True:
+                print(f"\t\t> Deduct from Flex Income:")
+                for z in flex_blocks:
+                    print(f"\t\t\t> {Colors.SPENT}${z.gas:.2f}{Colors.ENDC}")
+                print(f"\t\t> Blocks Delivered: {Colors.OKCYAN}{len(flex_blocks)}{Colors.ENDC}\n\t\t> Miles Driven: {Colors.OKBLUE}{tl_flex_miles:.2f}{Colors.ENDC}\n\t\t> Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
+
+
+
+# END OF JOBS SCHEDULED
+#########################################################################
+
+# PRINT CASHFLOW DEF
+
+def print_cashflow():
     ### PRRINT HEADER
     print("\n")
     print(f"{Colors.HEADER}=== Cashflow ==={Colors.ENDC}")
@@ -696,8 +747,13 @@ def print_category_totals():
 ### PRINT BASED ON ARG PROVIDED
 
 if args.overview:
+    print_jobs_scheduled()
     print_overview()
-elif args.print_totals:
-    print_category_totals()
+elif args.cashflow:
+    print_jobs_scheduled()
+    print_cashflow()
+elif args.flex:
+    print_jobs_scheduled()
+    print_cashflow()
 else:
-    print_category_totals()  # Default behavior if no arguments are provided
+    print_cashflow()  # Default behavior if no arguments are provided
