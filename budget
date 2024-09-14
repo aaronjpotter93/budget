@@ -728,6 +728,7 @@ def print_cashflow():
     if (total_income / total_budget) < ratio:
         gap = target - total_income
         aaron_target = aaron_income + gap
+        print(f"\t> {Colors.FAIL}Total Target Income: {Colors.OKCYAN}${target:,.2f}{Colors.ENDC}")
         print(f"\t> {Colors.FAIL}Target Aaron Income: {Colors.OKCYAN}${aaron_target:,.2f}{Colors.ENDC}")
         print(f"\t> {Colors.FAIL}Make at least: {Colors.OKCYAN}${gap:,.2f}{Colors.ENDC}{Colors.FAIL} more to be on target.{Colors.ENDC}")
     print(f"\t> Make {Colors.OKCYAN}${tier_gap:,.2f}{Colors.ENDC} more to reach next tier")
