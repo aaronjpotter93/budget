@@ -19,6 +19,8 @@ if __name__ == "__main__":
     parser.add_argument("-r", "--restaurant", type=int, default=20, help="A number to override the default restaurant trip value")
     parser.add_argument("-g", "--groceries", type=int, default=68, help="A number to override the default grocery trip value")
     parser.add_argument("-f", "--flex", nargs='?', const=True, type=float, help="Most recent gas spendature on Amazon Flex Block")
+    parser.add_argument("-fa", "--flex_all", nargs='?', const=True, type=float, help="All Delivery Block Summaries")
+
     args = parser.parse_args()
     rtrip = args.restaurant
     gtrip = args.groceries
@@ -98,7 +100,8 @@ dj = gig * num_events
 jobs.append((s_dj, dj))
 
 class Flex:
-    def __init__ (self, offer: float, miles: float, gallons: float, ppg: float):
+    def __init__ (self, offer: float, miles: float, gallons: float, ppg: float, date: str):
+        self.date = date
         self.offer = offer
         self.miles = miles
         self.gallons = gallons
@@ -110,12 +113,12 @@ class Flex:
         self.p_take = (self.profit / offer) * 100
 
     def print_summary(self):
-        print(f"\nBlock Summary:\n> Offer: ${self.offer:.2f}\n> Miles: {self.miles:.2f}\n> Gallons: {self.gallons:.2f}\n> M/G: {self.m_g:.2f}\n> PPG: {self.ppg:.2f}\n> Gas: ${self.gas:.2f}\n> Profit: ${self.profit:.2f}\n> P_Take: %{self.p_take:.0f}\n")
+        print(f"\t\t\tBlock Summary:\n\t\t\t> {Colors.BOLD}Date:{Colors.ENDC} {self.date}\n\t\t\t> {Colors.BOLD}Offer:{Colors.ENDC} ${self.offer:.2f}\n\t\t\t> {Colors.BOLD}Miles:{Colors.ENDC} {self.miles:.2f}\n\t\t\t> {Colors.BOLD}Gallons:{Colors.ENDC} {self.gallons:.2f}\n\t\t\t> {Colors.BOLD}M/G:{Colors.ENDC} {self.m_g:.2f}\n\t\t\t> {Colors.BOLD}PPG:{Colors.ENDC} {self.ppg:.2f}\n\t\t\t> {Colors.BOLD}Gas:{Colors.ENDC} ${self.gas:.2f}\n\t\t\t> {Colors.BOLD}Profit:{Colors.ENDC} ${self.profit:.2f}\n\t\t\t> {Colors.BOLD}P_Take:{Colors.ENDC} %{self.p_take:.0f}\n")
 
 
-lunes = Flex(63, 85, 3.96, 3.599)
-martes = Flex(72, 77, 2.79, 3.629)
-miercoles = Flex(63, 35.6, 1.02, 3.6)
+lunes = Flex(63, 85, 3.96, 3.599, "Sep 9")
+martes = Flex(72, 77, 2.79, 3.629, "Sep 10")
+miercoles = Flex(63, 35.6, 1.02, 3.6, "Sep 11")
 flex_blocks = []
 flex_blocks = [lunes, martes, miercoles]
 tl_flex_miles = 0
@@ -254,6 +257,7 @@ utilities = 70
 class Tier_1:
     def __init__(self):
         self.tier = 1
+        self.next_tier_floor = 2200
 
         # strict variable
         self.strict_variable = {
@@ -270,14 +274,14 @@ class Tier_1:
             'dates': 0,
             'gifts': 0,
             'donations': 0,
-            'personal': 0,
+            'personal': 15,
             'gaming': 0,
             'clothes_shoes_accessories': 0,
             'entertainment': 0,
             'social': 0,
             'recreation': 0,
             'personal_care': 0,
-            'classroom': 0,
+            'classroom': 10,
             'furnishing': 0,
             'other': 0,
             'travel': 0
@@ -304,6 +308,7 @@ class Tier_1:
 class Tier_2:
     def __init__(self):
         self.tier = 2
+        self.next_tier_floor = 4333
 
         # strict variable
         self.strict_variable = {
@@ -327,7 +332,7 @@ class Tier_2:
             'social': 0,
             'recreation': 0,
             'personal_care': 0,
-            'classroom': 0,
+            'classroom': 10,
             'furnishing': 0,
             'other': 0,
             'travel': 15
@@ -355,6 +360,7 @@ class Tier_2:
 class Tier_3:
     def __init__(self):
         self.tier = 3
+        self.next_tier_floor = 5333
        
         # strict variable
         self.strict_variable = {
@@ -378,7 +384,7 @@ class Tier_3:
             'social': 100,
             'recreation': 40,
             'personal_care': 0,
-            'classroom': 0,
+            'classroom': 10,
             'furnishing': 0,
             'other': 0,
             'travel': 15
@@ -448,6 +454,7 @@ hardware_names = ["earbuds", "headphones", "watch", "phone", "tablet", "laptop",
 
 if isinstance(income_tier, Tier_1) or isinstance(income_tier, Tier_2) or isinstance(income_tier, Tier_3):
     # strict variable
+    next_tier_floor = income_tier.next_tier_floor
     groceries = income_tier.strict_variable['groceries']
     gas = income_tier.strict_variable['gas']
     restaurants = income_tier.strict_variable['restaurants']
@@ -518,6 +525,9 @@ aaron_income_strict_ratio = aaron_income /  strict_fixed
 #Target Income based on a ratio of income/expenses
 ratio = 1.11009373
 target = total_budget * ratio
+
+#more to make to next tier
+tier_gap = next_tier_floor - aaron_income
 
 ###############################################################################################
 
@@ -668,11 +678,19 @@ def print_jobs_scheduled():
             print(f"\t> {x}\n\t  {Colors.OKGREEN}${y:,.2f}{Colors.ENDC}")
             if x == "Flex" and args.flex is False:
                 print("\n\t\t>No Amazon Flex Blocks Delevired.\n")
-            elif x == "Flex" and args.flex is True:
+            elif x == "Flex" and (args.flex or args.flex_all):
+                print(f"\t\t> Block Earnings (after gas deductions):")
+                for z in flex_blocks:
+                    print(f"\t\t\t> {Colors.OKGREEN}${z.profit:.2f}{Colors.ENDC}")
+                print(f"\t\t> Average earning per block: {Colors.OKCYAN}${y/(len(flex_blocks)):.2f}{Colors.ENDC}")
                 print(f"\t\t> Deduct from Flex Income:")
                 for z in flex_blocks:
                     print(f"\t\t\t> {Colors.SPENT}${z.gas:.2f}{Colors.ENDC}")
-                print(f"\t\t> Blocks Delivered: {Colors.OKCYAN}{len(flex_blocks)}{Colors.ENDC}\n\t\t> Miles Driven: {Colors.OKBLUE}{tl_flex_miles:.2f}{Colors.ENDC}\n\t\t> Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
+                if args.flex_all:
+                    print(f"\t\t> All Deliveries:")
+                    for z in flex_blocks:
+                        z.print_summary()
+                print(f"\t\t> Blocks Delivered: {Colors.OKCYAN}{len(flex_blocks)}{Colors.ENDC}\n\t\t> Miles Driven: {Colors.OKCYAN}{tl_flex_miles:.2f}{Colors.ENDC}\n\t\t> Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
 
 
 
@@ -697,6 +715,7 @@ def print_cashflow():
         gap = target - total_income
         print(f"\t> {Colors.FAIL}Target Income: {Colors.OKCYAN}${target:,.2f}{Colors.ENDC}")
         print(f"\t> {Colors.FAIL}Make at least: {Colors.OKCYAN}${gap:,.2f}{Colors.ENDC}{Colors.FAIL} more to be on target.{Colors.ENDC}")
+    print(f"\t> {Colors.OKBLUE}Next Tier after: {Colors.OKCYAN}${tier_gap:,.2f}{Colors.ENDC}")
     print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
     print(f"** Income Tier: {income_tier.tier} **")
     print("\n")
