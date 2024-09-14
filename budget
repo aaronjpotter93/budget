@@ -689,7 +689,7 @@ def print_jobs_scheduled():
             print(f"\t> {x}\n\t  {Colors.OKGREEN}${y:,.2f}{Colors.ENDC}")
             if x == "Flex" and args.flex is False and args.flex_all is False and args.if_flex is False:
                 print("\n\t\t> No Amazon Flex Blocks Delevired.\n")
-            elif x == "Flex" and (args.flex or args.flex_all or args.if_flex):
+            elif x == "Flex" and (args.flex or args.flex_all):
                 print(f"\t\t> Block Earnings (after gas deductions):")
                 for z in flex_blocks:
                     print(f"\t\t\t> {Colors.OKGREEN}${z.profit:.2f}{Colors.OKGREEN}")
