@@ -14,13 +14,13 @@ if __name__ == "__main__":
     parser.add_argument("-ai", "--outlier", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
                                default=[18.0, 3, 0], help="Hourly rate, hours worked, and days worked for income calculation")
     #                          default=[18.0, 3, 16]
+    parser.add_argument("-if", "--if_flex", nargs=1, type=int, metavar="new income if delivered n# more blocks", help="Print the full overview")
     parser.add_argument("-o", "--overview", action="store_true", help="Print the full overview")
     parser.add_argument("-j", "--jobs", action="store_true", help="Job Breakdown")
     parser.add_argument("-r", "--restaurant", type=int, default=20, help="A number to override the default restaurant trip value")
     parser.add_argument("-g", "--groceries", type=int, default=68, help="A number to override the default grocery trip value")
-    parser.add_argument("-f", "--flex", nargs='?', const=True, type=float, help="Most recent gas spendature on Amazon Flex Block")
-    parser.add_argument("-fa", "--flex_all", nargs='?', const=True, type=float, help="All Delivery Block Summaries")
-
+    parser.add_argument("-f", "--flex", action="store_true", help="Most recent gas expenditure on Amazon Flex Block")
+    parser.add_argument("-fa", "--flex_all", action="store_true", help="All Delivery Block Summaries")
     args = parser.parse_args()
     rtrip = args.restaurant
     gtrip = args.groceries
@@ -121,6 +121,10 @@ martes = Flex(72, 77, 2.79, 3.629, "Sep 10")
 miercoles = Flex(63, 35.6, 1.02, 3.6, "Sep 11")
 flex_blocks = []
 flex_blocks = [lunes, martes, miercoles]
+if args.if_flex:
+    if_blocks = args.if_flex[0]
+    for x in range(if_blocks):
+        flex_blocks.append(Flex(68, 81, 3.375, 3.6, "Hypothetical"))
 tl_flex_miles = 0
 tl_flex_gas = 0
 tl_flex_profit = 0
@@ -205,13 +209,19 @@ class Spending:
         self.restaurant_trip = restaurant_trip
 spending_tier = None
 
-if aaron_income <= 1000:
+# Income Tier Definitions:
+tier_2_floor = 1000
+tier_3_floor = 2000
+tier_4_floor = 4333
+tier_5_floor = 6000
+
+if aaron_income <= tier_2_floor:
     spending_tier = Spending(68, 20)
-elif 1000 < aaron_income <= 2200:
+elif tier_2_floor < aaron_income <= tier_3_floor:
     spending_tier = Spending(68, 20)
-elif 2200 < aaron_income <= 4333:
+elif tier_3_floor < aaron_income <= tier_4_floor:
     spending_tier = Spending(80, 25)
-elif 4333 < aaron_income <= 6000:
+elif tier_4_floor < aaron_income <= tier_5_floor:
     spending_tier = Spending(80, 25)
 elif aaron_income > 6000:
     spending_tier = Spending(80, 25)
@@ -257,7 +267,7 @@ utilities = 70
 class Tier_1:
     def __init__(self):
         self.tier = 1
-        self.next_tier_floor = 2200
+        self.next_tier_floor = tier_2_floor
 
         # strict variable
         self.strict_variable = {
@@ -308,7 +318,7 @@ class Tier_1:
 class Tier_2:
     def __init__(self):
         self.tier = 2
-        self.next_tier_floor = 4333
+        self.next_tier_floor = tier_3_floor
 
         # strict variable
         self.strict_variable = {
@@ -360,7 +370,7 @@ class Tier_2:
 class Tier_3:
     def __init__(self):
         self.tier = 3
-        self.next_tier_floor = 5333
+        self.next_tier_floor = tier_4_floor
        
         # strict variable
         self.strict_variable = {
@@ -410,15 +420,15 @@ class Tier_3:
 
 
 ### DEFINE SPENDING TIER BOUNDRIES
-if aaron_income <= 2000:  # take home salary < $12,000 (part time jobs)
+if aaron_income <= tier_2_floor:  # take home salary < $12,000 (part time jobs)
     income_tier = Tier_1()
-elif aaron_income > 1000 and aaron_income <= 2200:  # take home salary > $12,000 < $26,496 (not quite full time)
+elif aaron_income > tier_2_floor and aaron_income <= tier_3_floor:  # take home salary > $12,000 < $26,496 (not quite full time)
     income_tier = Tier_2()
-elif aaron_income > 2200 and aaron_income <= 4333:  # take home salary > $24,496 < $52,000 (at least full time at $15/hr)
+elif aaron_income > tier_3_floor and aaron_income <= tier_4_floor:  # take home salary > $24,496 < $52,000 (at least full time at $15/hr)
     income_tier = Tier_3()
-elif aaron_income > 4333 and aaron_income <= 6000:  # take home salary > $52,000 < $72,000 (big boy job)
+elif aaron_income > tier_4_floor and aaron_income <= tier_5_floor:  # take home salary > $52,000 < $72,000 (big boy job)
     income_tier = Tier_3()
-elif aaron_income > 6000 and aaron_income <= 8333:  # take home salary > $72,000 < $100,000
+elif aaron_income > tier_5_floor and aaron_income <= 8333:  # take home salary > $72,000 < $100,000
     income_tier = Tier_3()
 
 # Define hardware terms
@@ -554,7 +564,8 @@ def print_overview():
     print(f"{Colors.OKGREEN}{Colors.UNDERLINE}{Colors.BOLD}Total Income:{Colors.UNDERLINEOFF} ${total_income:,.2f}{Colors.ENDC}")
     if (total_income / total_budget) < ratio:
         gap = target - total_income
-        print(f"\t> {Colors.FAIL}Target Income: {Colors.OKCYAN}${target:,.2f}{Colors.ENDC}")
+        aaron_target = aaron_income + gap
+        print(f"\t> {Colors.FAIL}Target Income: {Colors.OKCYAN}${aaron_target:,.2f}{Colors.ENDC}")
         print(f"\t> {Colors.FAIL}Make at least: {Colors.OKCYAN}${gap:,.2f}{Colors.ENDC}{Colors.FAIL} more to be on target.{Colors.ENDC}")
     print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
     print(f"** Income Tier: {income_tier.tier} **")
@@ -676,22 +687,25 @@ def print_jobs_scheduled():
     for x, y in jobs:
         if y > 0:
             print(f"\t> {x}\n\t  {Colors.OKGREEN}${y:,.2f}{Colors.ENDC}")
-            if x == "Flex" and args.flex is False:
-                print("\n\t\t>No Amazon Flex Blocks Delevired.\n")
-            elif x == "Flex" and (args.flex or args.flex_all):
+            if x == "Flex" and args.flex is False and args.flex_all is False and args.if_flex is False:
+                print("\n\t\t> No Amazon Flex Blocks Delevired.\n")
+            elif x == "Flex" and (args.flex or args.flex_all or args.if_flex):
                 print(f"\t\t> Block Earnings (after gas deductions):")
                 for z in flex_blocks:
-                    print(f"\t\t\t> {Colors.OKGREEN}${z.profit:.2f}{Colors.ENDC}")
+                    print(f"\t\t\t> {Colors.OKGREEN}${z.profit:.2f}{Colors.OKGREEN}")
                 print(f"\t\t> Average earning per block: {Colors.OKCYAN}${y/(len(flex_blocks)):.2f}{Colors.ENDC}")
                 print(f"\t\t> Deduct from Flex Income:")
                 for z in flex_blocks:
-                    print(f"\t\t\t> {Colors.SPENT}${z.gas:.2f}{Colors.ENDC}")
-                if args.flex_all:
+                    print(f"\t\t\t> Gas: {Colors.SPENT}${z.gas:.2f}{Colors.ENDC}")
+                print(f"\t\t> Blocks Delivered: {Colors.OKBLUE}{len(flex_blocks)}{Colors.ENDC}")
+                print(f"\t\t> Miles Driven: {Colors.OKBLUE}{tl_flex_miles:.2f}{Colors.ENDC}")
+                print(f"\t\t> Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
+
+                # This block should execute only if -flex_all is passed
+                if args.flex_all or args.if_flex:
                     print(f"\t\t> All Deliveries:")
                     for z in flex_blocks:
                         z.print_summary()
-                print(f"\t\t> Blocks Delivered: {Colors.OKCYAN}{len(flex_blocks)}{Colors.ENDC}\n\t\t> Miles Driven: {Colors.OKCYAN}{tl_flex_miles:.2f}{Colors.ENDC}\n\t\t> Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
-
 
 
 # END OF JOBS SCHEDULED
@@ -713,9 +727,10 @@ def print_cashflow():
     print(f"{Colors.OKGREEN}{Colors.UNDERLINE}{Colors.BOLD}Total Income:{Colors.UNDERLINEOFF} ${total_income:,.2f}{Colors.ENDC}")
     if (total_income / total_budget) < ratio:
         gap = target - total_income
-        print(f"\t> {Colors.FAIL}Target Income: {Colors.OKCYAN}${target:,.2f}{Colors.ENDC}")
+        aaron_target = aaron_income + gap
+        print(f"\t> {Colors.FAIL}Target Aaron Income: {Colors.OKCYAN}${aaron_target:,.2f}{Colors.ENDC}")
         print(f"\t> {Colors.FAIL}Make at least: {Colors.OKCYAN}${gap:,.2f}{Colors.ENDC}{Colors.FAIL} more to be on target.{Colors.ENDC}")
-    print(f"\t> {Colors.OKBLUE}Next Tier after: {Colors.OKCYAN}${tier_gap:,.2f}{Colors.ENDC}")
+    print(f"\t> Make {Colors.OKCYAN}${tier_gap:,.2f}{Colors.ENDC} more to reach next tier")
     print(f"{Colors.SPENT}{Colors.UNDERLINE}{Colors.BOLD}Monthly Spendings:{Colors.UNDERLINEOFF} ${total_budget:,.2f}{Colors.ENDC}")
     print(f"** Income Tier: {income_tier.tier} **")
     print("\n")
@@ -781,7 +796,7 @@ if args.overview:
 elif args.jobs:
     print_jobs_scheduled()
     print_cashflow()
-elif args.flex:
+elif args.flex or args.flex_all or args.if_flex:
     print_jobs_scheduled()
     print_cashflow()
 else:
