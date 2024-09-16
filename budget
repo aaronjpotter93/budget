@@ -21,6 +21,7 @@ if __name__ == "__main__":
     parser.add_argument("-g", "--groceries", type=int, default=68, help="A number to override the default grocery trip value")
     parser.add_argument("-f", "--flex", action="store_true", help="Most recent gas expenditure on Amazon Flex Block")
     parser.add_argument("-fa", "--flex_all", action="store_true", help="All Delivery Block Summaries")
+    parser.add_argument("-sf", "--strict_fixed_dict", action="store_true", help="Strict Fixed Breakdown")
     args = parser.parse_args()
     rtrip = args.restaurant
     gtrip = args.groceries
@@ -99,6 +100,7 @@ num_events = 0
 dj = gig * num_events
 jobs.append((s_dj, dj))
 
+# Amazon Flex Income Definitions
 class Flex:
     def __init__ (self, offer: float, miles: float, gallons: float, ppg: float, date: str):
         self.date = date
@@ -112,19 +114,39 @@ class Flex:
         self.profit = offer - self.gas
         self.p_take = (self.profit / offer) * 100
 
-    def print_summary(self):
-        print(f"\t\t\tBlock Summary:\n\t\t\t> {Colors.BOLD}Date:{Colors.ENDC} {self.date}\n\t\t\t> {Colors.BOLD}Offer:{Colors.ENDC} ${self.offer:.2f}\n\t\t\t> {Colors.BOLD}Miles:{Colors.ENDC} {self.miles:.2f}\n\t\t\t> {Colors.BOLD}Gallons:{Colors.ENDC} {self.gallons:.2f}\n\t\t\t> {Colors.BOLD}M/G:{Colors.ENDC} {self.m_g:.2f}\n\t\t\t> {Colors.BOLD}PPG:{Colors.ENDC} {self.ppg:.2f}\n\t\t\t> {Colors.BOLD}Gas:{Colors.ENDC} ${self.gas:.2f}\n\t\t\t> {Colors.BOLD}Profit:{Colors.ENDC} ${self.profit:.2f}\n\t\t\t> {Colors.BOLD}P_Take:{Colors.ENDC} %{self.p_take:.0f}\n")
+    def __repr__(self):
+        return f"Flex(hours={self.hours}, miles={self.miles}, earnings={self.earnings}, gas_price={self.gas_price}, date='{self.date}')"
 
+    def print_summary(self):
+        print(f"\t\t\tBlock Summary:\n\t\t\t> {Colors.BOLD}Date:{Colors.ENDC} {self.date}\n\t\t\t> {Colors.BOLD}Offer:{Colors.ENDC} {Colors.OKCYAN}${self.offer:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}Miles:{Colors.ENDC} {Colors.OKBLUE}{self.miles:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}Gallons:{Colors.ENDC} {Colors.OKBLUE}{self.gallons:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}M/G:{Colors.ENDC} {Colors.OKBLUE}{self.m_g:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}PPG:{Colors.ENDC} {Colors.SPENT}${self.ppg:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}Gas:{Colors.ENDC} {Colors.SPENT}${self.gas:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}Profit:{Colors.ENDC} {Colors.OKGREEN}${self.profit:.2f}{Colors.ENDC}\n\t\t\t> {Colors.BOLD}P_Take:{Colors.ENDC} {Colors.OKCYAN}%{self.p_take:.0f}{Colors.ENDC}\n")
+
+def calculate_averages(blocks):
+    total_offers = sum(block.offer for block in blocks)
+    total_miles = sum(block.miles for block in blocks)
+    total_gallons = sum(block.gallons for block in blocks)
+    total_ppg = sum(block.ppg for block in blocks)
+    
+    num_blocks = len(blocks)
+    return (
+        total_offers / num_blocks,
+        total_miles / num_blocks,
+        total_gallons / num_blocks,
+        total_ppg / num_blocks
+    )
 
 lunes = Flex(63, 85, 3.96, 3.599, "Sep 9")
 martes = Flex(72, 77, 2.79, 3.629, "Sep 10")
 miercoles = Flex(63, 35.6, 1.02, 3.6, "Sep 11")
+lune2 = Flex(63, 68, 2.993, 3.589, "Sep 16")
 flex_blocks = []
-flex_blocks = [lunes, martes, miercoles]
+flex_blocks = [lunes, martes, miercoles, lune2]
+
+average_offers, average_miles, average_gallons, average_ppg = calculate_averages(flex_blocks)
+
 if args.if_flex:
     if_blocks = args.if_flex[0]
     for x in range(if_blocks):
-        flex_blocks.append(Flex(68, 81, 3.375, 3.6, "Hypothetical"))
+        flex_blocks.append(Flex(average_offers, average_miles, average_gallons, average_ppg, "Hypothetical"))
 tl_flex_miles = 0
 tl_flex_gas = 0
 tl_flex_profit = 0
@@ -187,7 +209,7 @@ else:
     base_rent = 1597 #after September 28th
 
 
-fluff_rent = 168
+fluff_rent = 172
 
 """
 Fluff charges consist of:
@@ -260,6 +282,17 @@ renters_insurance = 15.5  # bill $93 every 6 months
 internet = 40
 car_maintenance = 150
 utilities = 70
+
+# Fixed expenses key pairs (dictionary)
+strict_fixed_dict = {
+    "rent": rent,
+    "car_payment": car_payment,
+    "car_insurance": car_insurance,
+    "renters_insurance": renters_insurance,
+    "internet": internet,
+    "car_maintenance": car_maintenance,
+    "utilities": utilities
+}
 
 # classifying tiers for dynamic budgeting
 
@@ -690,19 +723,19 @@ def print_jobs_scheduled():
             if x == "Flex" and args.flex is False and args.flex_all is False and args.if_flex is False:
                 print("\n\t\t> No Amazon Flex Blocks Delevired.\n")
             elif x == "Flex" and (args.flex or args.flex_all):
+                print(f"\t\t> Blocks Delivered: {Colors.OKBLUE}{len(flex_blocks)}{Colors.ENDC}")
+                print(f"\t\t> Month Miles Driven: {Colors.OKBLUE}{tl_flex_miles:.2f}{Colors.ENDC}")
+                print(f"\t\t> Month Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
+                print(f"\t\t> Delivery Averages: ")
+                Flex(average_offers, average_miles, average_gallons, average_ppg, "...").print_summary()
                 print(f"\t\t> Block Earnings (after gas deductions):")
                 for z in flex_blocks:
-                    print(f"\t\t\t> {Colors.OKGREEN}${z.profit:.2f}{Colors.OKGREEN}")
-                print(f"\t\t> Average earning per block: {Colors.OKCYAN}${y/(len(flex_blocks)):.2f}{Colors.ENDC}")
+                    print(f"\t\t\t> {Colors.OKGREEN}${z.profit:.2f}{Colors.ENDC}")
                 print(f"\t\t> Deduct from Flex Income:")
                 for z in flex_blocks:
                     print(f"\t\t\t> Gas: {Colors.SPENT}${z.gas:.2f}{Colors.ENDC}")
-                print(f"\t\t> Blocks Delivered: {Colors.OKBLUE}{len(flex_blocks)}{Colors.ENDC}")
-                print(f"\t\t> Miles Driven: {Colors.OKBLUE}{tl_flex_miles:.2f}{Colors.ENDC}")
-                print(f"\t\t> Gas Spent: {Colors.SPENT}${tl_flex_gas:.2f}{Colors.ENDC}")
-
                 # This block should execute only if -flex_all is passed
-                if args.flex_all or args.if_flex:
+                if args.flex_all or (args.if_flex and args.flex_all):
                     print(f"\t\t> All Deliveries:")
                     for z in flex_blocks:
                         z.print_summary()
@@ -776,6 +809,9 @@ def print_cashflow():
     print(f"{Colors.HEADER}=== Category Totals ==={Colors.ENDC}")
     print("\n")
     print(f"{Colors.UNDERLINE}Strict Fixed aka Bills:{Colors.SPENT}{Colors.BOLD} ${strict_fixed:,.2f}{Colors.ENDC}")
+    if args.strict_fixed_dict:
+        for expense_name, expense_value in strict_fixed_dict.items():
+            print(f"\t> {expense_name}: {Colors.SPENT}${expense_value:,.2f}{Colors.ENDC}")
     print(f"{Colors.UNDERLINE}Strict Variable Spendings:{Colors.SPENT}{Colors.BOLD} ${soft_fixed:,.2f}{Colors.ENDC}")
     # Print only the 'strict_variable' section
     income_tier.print_section('strict_variable')
