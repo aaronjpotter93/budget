@@ -137,9 +137,10 @@ def calculate_averages(blocks):
 lunes = Flex(63, 85, 3.96, 3.599, "Sep 9")
 martes = Flex(72, 77, 2.79, 3.629, "Sep 10")
 miercoles = Flex(63, 35.6, 1.02, 3.6, "Sep 11")
-lune2 = Flex(63, 68, 2.993, 3.589, "Sep 16")
+lunes2 = Flex(63, 68, 2.993, 3.589, "Sep 16")
+martes2 = Flex(72, 57.7, 2.484, 3.589, "Sep 17")
 flex_blocks = []
-flex_blocks = [lunes, martes, miercoles, lune2]
+flex_blocks = [lunes, martes, miercoles, lunes2, martes2]
 
 average_offers, average_miles, average_gallons, average_ppg = calculate_averages(flex_blocks)
 
