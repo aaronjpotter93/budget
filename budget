@@ -92,6 +92,14 @@ aaron_hourly, aaron_hours, aaron_days = args.income
 grocery_outlet = aaron_hourly * aaron_hours * aaron_days * after_tax_rate
 jobs.append((s_grocery, grocery_outlet))
 
+# Peer Tutor WGU
+# s_peer = "Peer Tutor"
+# peer_weeks = 4
+# peer_hourly = 20
+# peer_hours = 15
+# peer_income = peer_hourly * peer_hours * peer_weeks * after_tax_rate
+# jobs.append((s_peer, peer_income))
+
 # DJ
 s_dj = "DJ"
 gig = 600
@@ -167,7 +175,9 @@ jobs.append((s_flex, tl_flex_profit))
 # jobs.append((s_flex, flex))
 
 # aaron jobs total
-aaron_month = grocery_outlet + tl_flex_profit + outlier + dj
+aaron_month = 0
+for name, income in jobs:
+    aaron_month += income
 aaron_income = aaron_month
 
 # aaron logged hours implementation for outlier.ai
