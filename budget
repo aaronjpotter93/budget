@@ -9,7 +9,7 @@ from datetime import datetime
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process budget arguments.")
     parser.add_argument("-i", "--income", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
-                                default=[13.0, 7, 5], help="Hourly rate, hours worked, and days worked for income calculation")
+                                default=[13.0, 7, 0], help="Hourly rate, hours worked, and days worked for income calculation") ## FIX ME -- PUT BACK 5 FOR DEFAULT VALUE IN PLACE OF 0
     
     parser.add_argument("-ai", "--outlier", nargs=3, type=float, metavar=('hourly_rate', 'hours_worked', 'days_worked'),
                                default=[18.0, 3, 0], help="Hourly rate, hours worked, and days worked for income calculation")
@@ -59,7 +59,7 @@ def count_mondays_and_fridays():
 
     # Loop through each day of the month
     for day in range(1, num_days + 1):
-        weekday = calendar.weekday(year, month, day)
+        weekday = calendar.weekday(year, month, day) 
         if weekday == calendar.MONDAY:
             monday_count += 1
         elif weekday == calendar.FRIDAY:
@@ -72,6 +72,8 @@ mondays, fridays = count_mondays_and_fridays()
 
 # incomes
 wgu_supplement = 397
+# apparently i haved nearly double wgu income and don't know whats going on
+# wgu_supplement = 685
 
 ### AARON JOBS ###
 jobs = []
@@ -104,7 +106,7 @@ jobs.append((s_grocery, grocery_outlet))
 s_dj = "DJ"
 gig = 600
 # num_events = 1
-num_events = 0
+num_events = 1
 dj = gig * num_events
 jobs.append((s_dj, dj))
 
@@ -142,15 +144,21 @@ def calculate_averages(blocks):
         total_ppg / num_blocks
     )
 
-lunes = Flex(63, 85, 3.96, 3.599, "Sep 9")
-martes = Flex(72, 77, 2.79, 3.629, "Sep 10")
-miercoles = Flex(63, 35.6, 1.02, 3.6, "Sep 11")
-lunes2 = Flex(63, 68, 2.993, 3.589, "Sep 16")
-martes2 = Flex(72, 57.7, 2.484, 3.589, "Sep 17")
-lunes3 = Flex(64.28, 78.7, 2.659, 3.589, "Sep 23")
-martes3 = Flex(72, 59.6, 2.193, 3.589, "Sep 24")
+#September
+# lunes = Flex(63, 85, 3.96, 3.599, "Sep 9")
+# martes = Flex(72, 77, 2.79, 3.629, "Sep 10")
+# miercoles = Flex(63, 35.6, 1.02, 3.6, "Sep 11")
+# lunes2 = Flex(63, 68, 2.993, 3.589, "Sep 16")
+# martes2 = Flex(72, 57.7, 2.484, 3.589, "Sep 17")
+# lunes3 = Flex(64.28, 78.7, 2.659, 3.589, "Sep 23")
+# martes3 = Flex(72, 59.6, 2.193, 3.589, "Sep 24")
+
+#October
+jueves = Flex(54, 47.7, 1.9958, 3.519, "Oct 3")
+
 flex_blocks = []
-flex_blocks = [lunes, martes, miercoles, lunes2, martes2, lunes3, martes3]
+#flex_blocks = [lunes, martes, miercoles, lunes2, martes2, lunes3, martes3, lunes, lunes, lunes]
+flex_blocks = [jueves]
 
 average_offers, average_miles, average_gallons, average_ppg = calculate_averages(flex_blocks)
 
@@ -207,34 +215,23 @@ years_savings = .75
 
 # defining rent rate
 #1710 - 1542 = $168 fluff charges
-base_rent = 1542 #before September 28th
-#base_rent = 1597 #after September 28th
+# base_rent = 1542 #before September 28th
+base_rent = 1597 #after September 28th
 
-# Define the cutoff date (September 28, 2024)
-cutoff_date = datetime(2024, 9, 28)
-# Get the current date and time
-current_date = datetime.now()
-
-# Check if the current date is before or after September 28th
-if current_date < cutoff_date:
-    base_rent = 1542 #before September 28th
-else:
-    base_rent = 1597 #after September 28th
-
-
-fluff_rent = 172
+fluff_rent = 162.36
 
 """
 Fluff charges consist of:
-Car Port $35
+Car Port $35.33
 Liability Only $15
-Water ~ $6.44
+Water ~ 7.11
 Trash ~ $16.66
-Sewer ~ $16.53
+Sewer ~ $18.84
 Pest Control Fee ~ $5.00
 Common Area Gas ~ $0.15
 Common Area Electric ~ $6.38
 Service Fee ~ $7.30
+Convinience Fee ~ $50.59
 """
 
 ### DEFINE DEFAULT BUDGET BOUNDRIES
@@ -837,6 +834,95 @@ def print_cashflow():
     print("\n")
     
 # END OF CATEGORY TOTALS PRINT DEF
+#########################################################################
+# START AND END MONTH PLANNING
+
+# months = 3  # Number of months to loop through
+
+# # Initial balances AUGUST
+# aug_m_income = 2301.93
+# aug_a_income = 450.92
+# aug_income = aug_a_income + aug_m_income + wgu_supplement
+
+# iccu_balance_aug31 = 4575.90
+# apple_balance_aug31 = 2409.82
+# iccu_sept_balance_after_aug_apple_paid = iccu_balance_aug31 - apple_balance_aug31
+
+# # Print statements for Aug-Sept
+# print(f"Month August:")
+# print(f"ICCU Balance after Megan receives paycheck: ${iccu_before_pay:,.2f}")
+# print(f"Apple Card Balance at the start of the month: ${apple_start:,.2f}")
+# print(f"Month September:")
+# print(f"ICCU Balance after WGU Supplement: ${iccu_plus_wgu:,.2f}")
+# print(f"ICCU Balance after paying off the Apple Card: ${iccu_when_apple_is_paid:,.2f}")
+# print(f"ICCU Balance as the month approaches end and Aaron gets paid for all jobs: ${iccu_next:,.2f}")
+# print("-" * 50)
+
+# # Initial balances SEPTEMBER
+# iccu_clean_start_sept = iccu_sept_balance_after_aug_apple_paid
+# sept_m_income = 2203.79
+# sept_a_income = 822.76
+# sept_income = sept_m_income + sept_a_income + wgu_supplement
+
+# # estimates to round off the month
+# more_restaurants = 70
+# more_groceries = 80
+
+# iccu_sept26_balance = 5208
+# apple_sept26_balance = 1046.84
+
+# #Print Statement for Sept-Oct
+# print(f"Month September:")
+# print(f"ICCU Balance after Megan receives paycheck: ${iccu_before_pay:,.2f}")
+# print(f"Apple Card Balance at the start of the month: ${apple_start:,.2f}")
+# print(f"Month October:")
+# print(f"ICCU Balance after WGU Supplement: ${iccu_plus_wgu:,.2f}")
+# print(f"ICCU Balance after paying off the Apple Card: ${iccu_when_apple_is_paid:,.2f}")
+# print(f"ICCU Balance as the month approaches end and Aaron gets paid for all jobs: ${iccu_next:,.2f}")
+# print("-" * 50)
+
+# iccu_balance_sept31 = iccu_sept26_balance - more_groceries
+# apple_balance_sept31 = apple_sept26_balance + restaurants
+# iccu_oct_balance_after_sept_apple_paid = iccu_balance_sept31 - apple_balance_sept31
+
+# # Initial Values
+# # wgu_supplement = 397
+# oct5_dj = 500 # I have a one off source of income on october 5th
+# aaron_hypo_income = 808
+# megan_hypo_income = 2100
+# iccu_after_m_income = iccu_balance_sept31
+# apple_card_start = apple_balance_sept31
+# iccu_balance_after_apple_paid = iccu_oct_balance_after_sept_apple_paid
+# iccu_after_wgu_recieved = iccu_balance_after_apple_paid + wgu_supplement
+# iccu_balance_end
+# apple_balance_end
+
+
+
+# # Loop through the number of months
+# for month in range(months):
+#     iccu_before_pay = iccu_balance - apple_card_balance
+#     iccu_plus_wgu = iccu_balance + wgu_supplement
+#     iccu_when_apple_is_paid = iccu_plus_wgu - apple_card_balance
+#     month_expenses_not_rent = total_budget - rent 
+#     iccu_next = iccu_when_apple_is_paid + aaron_hypo_income
+#     apple_next = month_expenses_not_rent
+#     apple_card_balance = apple_next + rent  # Update for next month
+
+#     # Print statements with formatting
+#     print(f"Month {month}:")
+#     print(f"ICCU Balance after Megan receives paycheck: ${iccu_before_pay:,.2f}")
+#     print(f"Apple Card Balance at the start of the month: ${apple_start:,.2f}")
+#     print(f"Month {month + 1}:")
+#     print(f"ICCU Balance after WGU Supplement: ${iccu_plus_wgu:,.2f}")
+#     print(f"ICCU Balance after paying off the Apple Card: ${iccu_when_apple_is_paid:,.2f}")
+#     print(f"ICCU Balance as the month approaches end and Aaron gets paid for all jobs: ${iccu_next:,.2f}")
+#     print(f"Apple Card Balance before the start of next month: ${apple_next:,.2f}")
+#     print("-" * 50)
+
+#     # Update ICCU balance for the next month
+#     iccu_balance = iccu_next
+
 #########################################################################
 
 ### PRINT BASED ON ARG PROVIDED
